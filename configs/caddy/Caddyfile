@@ -1,0 +1,72 @@
+# Caddy на VPS: публичный вход к NAS.
+# Подставьте свои email, upstream и пароль.
+#
+# Цель этого файла — не выжать 300 Мбит/с, а не резать
+# и так узкий канал Люберцы→Хельсинки буферами и короткими таймаутами.
+#
+# После правок:
+#   sudo caddy validate --config /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+
+{
+	email you@example.com
+
+	# RaiDrive/WebDAV по HTTP/2 часто деградирует до сотен КБ/с.
+	# Для файлового входа оставляем HTTP/1.1.
+	servers {
+		protocols h1
+	}
+}
+
+files.zethixhome.ru {
+	log {
+		output file /var/log/caddy/files.log
+		format json
+	}
+
+	basicauth {
+		# caddy hash-password
+		nasuser $2a$14$REPLACE_WITH_HASH
+	}
+
+	request_body {
+		max_size 0
+	}
+
+	# Прямое скачивание фильма без WebDAV-клиента:
+	#   curl -u USER:PASS -o Film.mkv https://files.zethixhome.ru/dl/Movies/Film.mkv
+	handle_path /dl/* {
+		reverse_proxy 10.10.0.2:80 {
+			flush_interval -1
+			transport http {
+				read_timeout 24h
+				write_timeout 24h
+				dial_timeout 10s
+				keepalive 30s
+			}
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# WebDAV оставляем для документов и Проводника.
+	handle {
+		reverse_proxy 10.10.0.2:5005 {
+			flush_interval -1
+			transport http {
+				read_timeout 24h
+				write_timeout 24h
+				dial_timeout 10s
+				keepalive 30s
+			}
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+			header_up Destination {http.request.header.Destination}
+			header_up Overwrite {http.request.header.Overwrite}
+			header_up Depth {http.request.header.Depth}
+			header_up Timeout {http.request.header.Timeout}
+		}
+	}
+}
