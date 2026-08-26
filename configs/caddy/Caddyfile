@@ -1,8 +1,8 @@
 # Caddy на VPS: публичный вход к NAS.
-# Подставьте свои email, upstream и пароль.
-#
-# Цель этого файла — не выжать 300 Мбит/с, а не резать
-# и так узкий канал Люберцы→Хельсинки буферами и короткими таймаутами.
+# Фактический backend — Xray dokodemo-door на localhost:
+#   nas.zethixhome.ru   → 127.0.0.1:15001
+#   files.zethixhome.ru → 127.0.0.1:15005
+# Эти порты живы, только пока домашний nas-bridge подключён к Reality :23630.
 #
 # После правок:
 #   sudo caddy validate --config /etc/caddy/Caddyfile
@@ -36,7 +36,7 @@ files.zethixhome.ru {
 	# Прямое скачивание фильма без WebDAV-клиента:
 	#   curl -u USER:PASS -o Film.mkv https://files.zethixhome.ru/dl/Movies/Film.mkv
 	handle_path /dl/* {
-		reverse_proxy 10.10.0.2:80 {
+		reverse_proxy 127.0.0.1:15005 {
 			flush_interval -1
 			transport http {
 				read_timeout 24h
@@ -52,7 +52,7 @@ files.zethixhome.ru {
 
 	# WebDAV оставляем для документов и Проводника.
 	handle {
-		reverse_proxy 10.10.0.2:5005 {
+		reverse_proxy 127.0.0.1:15005 {
 			flush_interval -1
 			transport http {
 				read_timeout 24h
@@ -68,5 +68,29 @@ files.zethixhome.ru {
 			header_up Depth {http.request.header.Depth}
 			header_up Timeout {http.request.header.Timeout}
 		}
+	}
+}
+
+nas.zethixhome.ru {
+	log {
+		output file /var/log/caddy/nas.log
+		format json
+	}
+
+	basicauth {
+		nasuser $2a$14$REPLACE_WITH_HASH
+	}
+
+	reverse_proxy 127.0.0.1:15001 {
+		flush_interval -1
+		transport http {
+			read_timeout 24h
+			write_timeout 24h
+			dial_timeout 10s
+			keepalive 30s
+		}
+		header_up Host {upstream_hostport}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
 	}
 }

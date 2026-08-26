@@ -4,8 +4,8 @@
 
 ## NAS через интернет
 
-После выноса NAS наружу через VPS (`files.zethixhome.ru`) копирование больших файлов через RaiDrive/WebDAV идёт ~300 КБ/с.
+Туннель дом → VPS — это Xray reverse (`nas-bridge`, VLESS+Reality `:23630`), не WireGuard.
+Публичный вход: Caddy → `127.0.0.1:15001` / `:15005` → `nas-reverse-out`.
 
-Разбор узких мест и рабочие конфиги:
-
-- [Почему 300 КБ/с и как качать фильмы по 30 ГБ](docs/nas-remote-speed.md)
+- [502 после смены IP: починить nas-bridge по SSH](docs/nas-reverse-vless.md)
+- [Почему WebDAV даёт 300 КБ/с](docs/nas-remote-speed.md)

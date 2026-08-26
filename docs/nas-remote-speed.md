@@ -28,10 +28,11 @@ RaiDrive Premium на скорость WebDAV не влияет: он убира
 
 Публичная точка входа:
 
-- `files.zethixhome.ru` → `62.60.186.230`
+- `files.zethixhome.ru` / `nas.zethixhome.ru` → `62.60.152.45` (раньше был `62.60.186.230`)
 - Датацентр: **Helsinki, Finland**
 - Провайдер VPS: **Aeza (AS210644)**
-- Веб-сервер: **Caddy**, HTTPS, HTTP/2, Basic Auth (`WWW-Authenticate: Basic realm="restricted"`)
+- Веб-сервер: **Caddy**, HTTPS, HTTP/2, Basic Auth
+- Туннель до дома: **Xray reverse** (`nas-bridge` → VLESS Reality `:23630`), не WireGuard
 
 Удалённый ПК со скриншота:
 
